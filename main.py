@@ -48,7 +48,7 @@ while run:
             inp = keyboard.read_key()
 
             #Escape to mode choice / quit
-            if(inp == "Esc"):
+            if(inp == "Esc" or inp == 'esc'):
                 break
             elif(inp == "0"):
                 cam.disconnect()

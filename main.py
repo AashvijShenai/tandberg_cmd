@@ -129,7 +129,7 @@ while run:
                 cam.focus_auto(inp[1])
 
             elif(inp[0] == "pt"):
-                cam.pt_direct(inp[1], int(inp[2]))
+                cam.pt_direct(int(inp[1]), int(inp[2]))
 
             elif(inp[0] == "ptzf"):
                 cam.ptzf(int(inp[1]), int(inp[2]), int(inp[3]), int(inp[4]))

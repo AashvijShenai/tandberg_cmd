@@ -396,7 +396,7 @@ class Controller(object):
         msg += self.tiltSpeed
         msg += lookup[cmd]
 
-        status = self.send(lookup[msg])
+        status = self.send(msg)
 
         if(status != stat_OK):
             print("Operation status : FAILED")
@@ -686,7 +686,7 @@ class Controller(object):
         if(inq == True):
             print(hex_str)
 
-        if(resp != b'\x50' and resp != b'\x51'):
+        if(resp[0] != 80):  #\x50 = 80 in decimal
             return 1
         return 0
 

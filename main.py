@@ -134,3 +134,19 @@ while run:
 
             elif(cmd == "ptzf"):
                 cam.ptzf(int(inp[1]), int(inp[2]), int(inp[3]), int(inp[4]))
+
+
+            elif(cmd == "q_camid"):
+                cam.Q_camID()
+
+            elif(cmd == "q_z"):
+                cam.Q_zoomPos()
+
+            elif(cmd == "q_fPos"):
+                cam.Q_focusPos()
+
+            elif(cmd == "q_fMode"):
+                cam.Q_focusMode()
+
+            elif(cmd == "q_pt"):
+                cam.Q_ptPos()

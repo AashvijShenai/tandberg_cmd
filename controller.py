@@ -464,11 +464,203 @@ class Controller(object):
             time.sleep(20)
         return status
 
+
+    #Inquiry commands:
+    def Q_camID(self):
+        msg = b'\x09\x04\x22'
+        status = self.send(msg)
+
+        if(status != stat_OK):
+            print("CAM ID query status : FAILED")
+        return status
+
+    def Q_zoomPos(self):
+        msg = b'\x09\x04\x47'
+        status = self.send(msg)
+
+        if(status != stat_OK):
+            print("Zoom query status : FAILED")
+        return status
+
+    def Q_focusPos(self):
+        msg = b'\x09\x04\x48'
+        status = self.send(msg)
+
+        if(status != stat_OK):
+            print("Focus_pos query status : FAILED")
+        return status
+
+    def Q_focusMode(self):
+        msg = b'\x09\x04\x38'
+        status = self.send(msg)
+
+        if(status != stat_OK):
+            print("Focus_mode query status : FAILED")
+        return status
+
+    def Q_ptPos(self):
+        msg = b'\x09\x06\x12'
+        status = self.send(msg)
+
+        if(status != stat_OK):
+            print("PT query status : FAILED")
+        return status
+
+    def Q_pwr(self):
+        msg = b'\x09\x04\x00'
+        status = self.send(msg)
+
+        if(status != stat_OK):
+            print("Query status : FAILED")
+        return status
+
+    def Q_wbMode(self):
+        msg = b'\x09\x04\x35'
+        status = self.send(msg)
+
+        if(status != stat_OK):
+            print("Query status : FAILED")
+        return status
+
+    def Q_wbTable(self):
+        msg = b'\x09\x04\x75'
+        status = self.send(msg)
+
+        if(status != stat_OK):
+            print("Query status : FAILED")
+        return status
+
+    def Q_aeMode(self):
+        msg = b'\x09\x04\x39'
+        status = self.send(msg)
+
+        if(status != stat_OK):
+            print("Query status : FAILED")
+        return status
+
+    def Q_backlight(self):
+        msg = b'\x09\x04\x33'
+        status = self.send(msg)
+
+        if(status != stat_OK):
+            print("Query status : FAILED")
+        return status
+
+    def Q_mirror(self):
+        msg = b'\x09\x04\x61'
+        status = self.send(msg)
+
+        if(status != stat_OK):
+            print("Query status : FAILED")
+        return status
+
+    def Q_flip(self):
+        msg = b'\x09\x04\x66'
+        status = self.send(msg)
+
+        if(status != stat_OK):
+            print("Query status : FAILED")
+        return status
+
+    def Q_gammaMode(self):
+        msg = b'\x09\x04\x51'
+        status = self.send(msg)
+
+        if(status != stat_OK):
+            print("Query status : FAILED")
+        return status
+
+    def Q_gammaTable(self):
+        msg = b'\x09\x04\x52'
+        status = self.send(msg)
+
+        if(status != stat_OK):
+            print("Query status : FAILED")
+        return status
+
+    def Q_callLed(self):
+        msg = b'\x09\x01\x33\x01'
+        status = self.send(msg)
+
+        if(status != stat_OK):
+            print("Query status : FAILED")
+        return status
+
+    def Q_pwrLed(self):
+        msg = b'\x09\x01\x33\x02'
+        status = self.send(msg)
+
+        if(status != stat_OK):
+            print("Query status : FAILED")
+        return status
+
+    def Q_vidSwitch(self):
+        msg = b'\x09\x06\x24'
+        status = self.send(msg)
+
+        if(status != stat_OK):
+            print("Query status : FAILED")
+        return status
+
+    def Q_alsRGain(self):
+        msg = b'\x09\x50\x50'
+        status = self.send(msg)
+
+        if(status != stat_OK):
+            print("Query status : FAILED")
+        return status
+
+    def Q_alsBGain(self):
+        msg = b'\x09\x50\x51'
+        status = self.send(msg)
+
+        if(status != stat_OK):
+            print("Query status : FAILED")
+        return status
+
+    def Q_alsGGain(self):
+        msg = b'\x09\x50\x52'
+        status = self.send(msg)
+
+        if(status != stat_OK):
+            print("Query status : FAILED")
+        return status
+
+    def Q_alsWGain(self):
+        msg = b'\x09\x50\x53'
+        status = self.send(msg)
+
+        if(status != stat_OK):
+            print("Query status : FAILED")
+        return status
+
+    def Q_BestView(self):
+        msg = b'\x09\x50\x60'
+        status = self.send(msg)
+
+        if(status != stat_OK):
+            print("Query status : FAILED")
+        return status
+
+    def Q_upsideDown(self):
+        msg = b'\x09\x50\x70'
+        status = self.send(msg)
+
+        if(status != stat_OK):
+            print("Query status : FAILED")
+        return status
+
+
     def send(self, command):
         """Sends a command to the camera and returns the success code"""
         #If no serial connection is established
         if self.ser == None:
             return 1
+
+        #Is command an inquiry?
+        inq = False
+        if(command[0] == 9):
+            inq = True
 
         msg = self.address
         msg += command
@@ -479,15 +671,20 @@ class Controller(object):
 
         resp = b''
         rcvd_byte = None
+        hex_str = []
         while rcvd_byte != b'\xff':
             rcvd_byte = self.ser.read()
             resp += rcvd_byte
+            hex_str.append(rcvd_byte.hex())
 
         # Strip off first byte (address) and last (terminator)
         # We leave the reponse as bytes instead of hex because we may need to
         # do binary arithmetic on it later, might as well not just have to
         # convert back to bytes.
         resp = resp[1:-1]
+
+        if(inq == True):
+            print(hex_str)
 
         if(resp != b'\x50' and resp != b'\x51'):
             return 1

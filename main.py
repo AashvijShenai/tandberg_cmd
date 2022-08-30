@@ -90,46 +90,47 @@ while run:
     
         else:
             inp = input(">>").split(' ')
+            cmd = inp[0]
 
             #Escape to mode choice / quit
-            if(inp[0] == "Esc"):
+            if(cmd == "Esc"):
                 break
-            elif(inp[0] == "0"):
+            elif(cmd == "0"):
                 cam.disconnect()
                 exit()
 
-            elif(inp[0] == "vid_format"):
+            elif(cmd == "vid_format"):
                 cam.vid_format(inp[1])
 
-            elif(inp[0] == "wb_auto"):
+            elif(cmd == "wb_auto"):
                 if(len(inp) == 2):
                     cam.wb_auto(inp[1])
                 else:
                     cam.wb_auto(inp[1], int(inp[2]))
 
-            elif(inp[0] == "ae_auto"):
+            elif(cmd == "ae_auto"):
                 if(len(inp) == 2):
                     cam.ae_auto(inp[1])
                 else:
                     cam.ae_auto(inp[1], int(inp[2]), int(inp[3]))
 
-            elif(inp[0] == "gamma_auto"):
+            elif(cmd == "gamma_auto"):
                 if(len(inp) == 2):
                     cam.gamma_auto(inp[1])
                 else:
                     cam.gamma_auto(inp[1], int(inp[2]))
 
-            elif(inp[0] == "mm_detect"):
+            elif(cmd == "mm_detect"):
                 cam.mm_detect(inp[1])
 
-            elif(inp[0] == "zf"):
+            elif(cmd == "zf"):
                 cam.zoomFocus_direct(int(inp[1]), int(inp[2]))
 
-            elif(inp[0] == "focus_auto"):
+            elif(cmd == "focus_auto"):
                 cam.focus_auto(inp[1])
 
             elif(inp[0] == "pt"):
                 cam.pt_direct(int(inp[1]), int(inp[2]))
 
-            elif(inp[0] == "ptzf"):
+            elif(cmd == "ptzf"):
                 cam.ptzf(int(inp[1]), int(inp[2]), int(inp[3]), int(inp[4]))

@@ -1,12 +1,16 @@
 import serial
 import logging
 import time
+from serial.tools import list_ports
 
 stat_OK = 0
 stat_FAIL = 1
 
-class Controller(object):
+# Tandberg PrecisionHD 1080p supports:
+# Pan : -90 to +90 deg : 0-816 values
+# Tilt : -25 to +15 deg : 7-212 values
 
+class Controller(object):
     flipState = False
     mirrorState = False
     backlightState = False
@@ -32,14 +36,15 @@ class Controller(object):
         self.port = None
         self.ser = None
 
-    def connect(self, interface):
+    def connect(self, *inp):
         #9600 baud, 8N1, no flow control.
+        interface = inp[0]
         status = 0
         try:
             self.ser = serial.Serial(interface, timeout=5)
             self.interface = interface
         except Exception as error:
-            log.exception("Exception when connecting to device.")
+            print("Exception when connecting to device.")
             self.interface = None
             status = 1
         return status
@@ -52,7 +57,7 @@ class Controller(object):
                 self.interface = None
 
         except Exception as error:
-            log.exception("Exception when disconnecting to device.")
+            print("Exception when disconnecting to device.")
             status = 1
         return status
 
@@ -65,8 +70,9 @@ class Controller(object):
             print("Clear : FAILED")
         return status
 
-    def address_set(self, address):
+    def address_set(self, *inp):
         """Sets address of camera """
+        address = int(inp[0])
         #If broadcast i.e \x81, increase address with 1 before sending to chain
         #Assuming address 0-9. ?Is A-F allowed
         msg = b'\x30'
@@ -77,8 +83,9 @@ class Controller(object):
             print("SetAddress : FAILED")
         return status
 
-    def power(self, cmd):
-        #The command dont power on/off the camera. Only reset motors
+    def power(self, *inp):
+        #The command doesnt power on/off the camera. Only reset motors
+        cmd = inp[0]
         lookup = {
             'on' : b'\x01\x04\x00\x02',
             'off': b'\x01\x04\x00\x03',
@@ -89,8 +96,9 @@ class Controller(object):
             print("Power status : FAILED")
         return status
 
-    def vid_format(self, value):
+    def vid_format(self, *inp):
         """Sets the video format"""
+        cmd = inp[0]
         #Only functions if the video mode DIP is set to SW
         #If DIP is changed during runtime, camera must be rebooted
         lookup = {
@@ -114,8 +122,9 @@ class Controller(object):
             print("Video format status : FAILED")
         return status
 
-    def wb_auto(self, cmd, value=0):
+    def wb_auto(self, *inp):
         """Sets White balance to auto/manual and to value if manual"""
+        cmd = inp[0]
         lookup = {
             'on' : b'\x01\x04\x35\x00',
             'off': b'\x01\x04\x35\x06',
@@ -123,7 +132,7 @@ class Controller(object):
 
         if(cmd == 'off'):
             #Update table index before switching to manual mode
-            msg = b'\x01\x04\x75' + self.__toVisca2b(value)
+            msg = b'\x01\x04\x75' + self.__toVisca2b(int(inp[1]))
             status = self.send(msg)
 
             if(status != stat_OK):
@@ -135,23 +144,25 @@ class Controller(object):
             print("WB status : FAILED")
         return status
 
-    def ae_auto(self, cmd, iris=0, gain=0):
+    def ae_auto(self, *inp):
         """Sets Auto Exposure to auto/manual and to value if manual"""
+        cmd = inp[0]
+
         lookup = {
             'on' : b'\x01\x04\x39\x00',
             'off': b'\x01\x04\x39\x03',
         }
 
         if(cmd == 'off'):
-            #Update iris_position before switching to manual mode, range = 0..50
-            msg = b'\x01\x04\x4B' + self.__toVisca2b(iris)
+            #Update iris position before switching to manual mode, range = 0..50
+            msg = b'\x01\x04\x4B' + self.__toVisca2b(int(inp[1]))
             status = self.send(msg)
 
             if(status != stat_OK):
                 print("Update iris status : FAILED")
 
             #Update gain position before switching to manual mode, range = 12-21 dB
-            msg = b'\x01\x04\x4C' + self.__toVisca2b(gain)
+            msg = b'\x01\x04\x4C' + self.__toVisca2b(int(inp[2]))
             status = self.send(msg)
 
             if(status != stat_OK):
@@ -163,9 +174,9 @@ class Controller(object):
             print("AE status : FAILED")
         return status
 
-    def backlight(self, cmd):
+    def backlight(self, *inp):
         """Turns backlight compensation on or off"""
-
+        cmd = inp[0]
         lookup = {
             'on' : b'\x01\x04\x33\x02',
             'off': b'\x01\x04\x33\x03',
@@ -185,8 +196,9 @@ class Controller(object):
             print("Backlight status : FAILED")
         return status
 
-    def mirror(self, cmd):
+    def mirror(self, *inp):
         """Turns mirror on or off"""
+        cmd = inp[0]
         lookup = {
             'on' : b'\x01\x04\x61\x02',
             'off': b'\x01\x04\x61\x03',
@@ -206,8 +218,9 @@ class Controller(object):
             print("Mirror status : FAILED")
         return status
 
-    def flip(self, cmd):
+    def flip(self, *inp):
         """Turns flip on or off"""
+        cmd = inp[0]
         lookup = {
             'on' : b'\x01\x04\x66\x02',
             'off': b'\x01\x04\x66\x03',
@@ -227,8 +240,9 @@ class Controller(object):
             print("Flip status : FAILED")
         return status
 
-    def gamma_auto(self, cmd, value=0):
+    def gamma_auto(self, *inp):
         """Sets Gamma to auto/manual and to value if manual"""
+        cmd = inp[0]
         # Default - table 4
         lookup = {
             'on' : b'\x01\x04\x51\x02',
@@ -237,7 +251,7 @@ class Controller(object):
 
         if(cmd == 'off'):
             #Update table before switching to manual mode range = 0..7
-            msg = b'\x01\x04\x52' + self.__toVisca2b(value)
+            msg = b'\x01\x04\x52' + self.__toVisca2b(int(inp[1]))
             status = self.send(msg)
 
             if(status != stat_OK):
@@ -249,8 +263,9 @@ class Controller(object):
             print("Gamma status : FAILED")
         return status
 
-    def mm_detect(self, cmd):
+    def mm_detect(self, *inp):
         """Turns Motor moved detection on or off"""
+        cmd = inp[0]
         #Camera recalibrates if MMD is on and is touched
         lookup = {
             'on' : b'\x01\x50\x30\x01',
@@ -263,8 +278,9 @@ class Controller(object):
             print("MM status : FAILED")
         return status
 
-    def call_led(self, cmd):
+    def call_led(self, *inp):
         """Turns call LED on or off"""
+        cmd = inp[0]
         lookup = {
             'on' : b'\x01\x33\x01\x01',
             'off': b'\x01\x33\x01\x00',
@@ -277,7 +293,8 @@ class Controller(object):
             print("Call LED status : FAILED")
         return status
 
-    def pwr_led(self, cmd):
+    def pwr_led(self, *inp):
+        cmd = inp[0]
         """Turns power LED on or off"""
         lookup = {
             'on' : b'\x01\x33\x02\x01',
@@ -290,8 +307,10 @@ class Controller(object):
             print("Power LED status : FAILED")
         return status
 
-    def bestView(self, cmd, time):
+    def bestView(self, *inp):
         """Turns Best View on or off"""
+        cmd = inp[0]
+        time = int(inp[1])
         #time < 100s
         #time = 0 stops operation
         msg = b'\x01\x50\x60'
@@ -306,20 +325,24 @@ class Controller(object):
             print("Best view status : FAILED")
         return status
 
-    def setZoomSpeed(self, cmd):
+    def setZoomSpeed(self, *inp):
+        cmd = inp[0]
         if(cmd == "high"):
             self.zoomSpeed = 11
         else:
             self.zoomSpeed = 10
 
-    def setFocusSpeed(self, cmd):
+    def setFocusSpeed(self, *inp):
+        cmd = inp[0]
         if(cmd == "high"):
             self.focusSpeed = 11
         else:
             self.focusSpeed = 10
 
-    def zoomFocus(self, fn,cmd):
+    def zoomFocus(self, *inp):
         """Sets the Zoom/Focus"""
+        fn = inp[0]
+        cmd = inp[1]
         msg = b'\x01\x04'
 
         speed = self.zoomSpeed
@@ -332,9 +355,9 @@ class Controller(object):
         if(cmd == "stop"):
             temp = 0
         elif(cmd == "in" or cmd == "far"):
-            temp = 32 + speed
+            temp = 32 + speed   #32 - 0x20
         elif(cmd == "out" or cmd == "near"):
-            temp = 48 + speed
+            temp = 48 + speed   #48 - 0x30
         msg += temp.to_bytes(1,"big")
 
         status = self.send(msg)
@@ -343,9 +366,11 @@ class Controller(object):
             print("Zoom/Focus status : FAILED")
         return status
 
-    def zoomFocus_direct(self, zoom=0, focus=0):
+    def zoomFocus_direct(self, *inp):
+        zoom = int(inp[0])
+        focus = int(inp[1])
         """Sets Zoom/Focus to specified position directly"""
-        #Set zoom/focus arguments to -1 if both functions are not used
+        #Set zoom/focus arguments to -1 if functions are not used
         #Zoom/Focus = PQRS, not sure what these stand for
 
         msg = b'\x01\x04'
@@ -365,7 +390,8 @@ class Controller(object):
             print("Zoom/Focus direct status : FAILED")
         return status
 
-    def focus_auto(self, cmd):
+    def focus_auto(self, *inp):
+        cmd = inp[0]
         """Turns autofocus on or off"""
         lookup = {
             'on': b'\x01\x04\x38\x02',
@@ -378,8 +404,9 @@ class Controller(object):
             print("Auto focus status : FAILED")
         return status
 
-    def steer(self, cmd):
+    def steer(self, *inp):
         """Steer in a direction"""
+        cmd = inp[0]
         #Stop is not added
         lookup = {
             'up': b'\x03\x01',
@@ -421,11 +448,13 @@ class Controller(object):
             print("Reboot status : FAILED")
         return status
 
-    def pt_direct(self, pan, tilt):
+    def pt_direct(self, *inp):
         """Sets Pan/Tilt directly to positions"""
+        pan = int(inp[0])
+        tilt = int(inp[1])
         msg = b'\x01\x06\x02'
-        msg += self.panSpeedMax
-        msg += self.tiltSpeedMax
+        msg += self.panSpeed
+        msg += self.tiltSpeed
         msg += self.__toVisca2b(pan)
         msg += self.__toVisca2b(tilt)
 
@@ -434,8 +463,13 @@ class Controller(object):
         if(status != stat_OK):
             print("PT direct status : FAILED")
 
-    def ptzf(self, pan, tilt, zoom, focus):
+    def ptzf(self, *inp):
         """Sets all motors directly to positions in one operation"""
+        pan = int(inp[0])
+        tilt = int(inp[1])
+        zoom = int(inp[2])
+        focus = int(inp[3])
+
         msg = b'\x01\x06\x20'
         msg += self.__toVisca2b(pan)
         msg += self.__toVisca2b(tilt)
@@ -448,8 +482,9 @@ class Controller(object):
             print("PTZF direct status : FAILED")
         return status
 
-    def serialSpeed(self, speed):
+    def serialSpeed(self, *inp):
         """Update serial communication speed"""
+        speed = inp[0]
         #Requires a delay of 20s before next command
         #9600 baud/115200 baud
         lookup = {
@@ -650,25 +685,7 @@ class Controller(object):
             print("Query status : FAILED")
         return status
 
-
-    def send(self, command):
-        """Sends a command to the camera and returns the success code"""
-        #If no serial connection is established
-        if self.ser == None:
-            return 1
-
-        #Is command an inquiry?
-        inq = False
-        if(command[0] == 9):
-            inq = True
-
-        msg = self.address
-        msg += command
-        msg += b'\xff'
-
-        #Write to camera
-        self.ser.write(msg)
-
+    def receive(self, query_stat):
         resp = b''
         rcvd_byte = None
         hex_str = []
@@ -678,17 +695,49 @@ class Controller(object):
             hex_str.append(rcvd_byte.hex())
 
         # Strip off first byte (address) and last (terminator)
-        # We leave the reponse as bytes instead of hex because we may need to
-        # do binary arithmetic on it later, might as well not just have to
-        # convert back to bytes.
+        # We leave the reponse as bytes instead of hex
         resp = resp[1:-1]
 
-        if(inq == True):
+        if(query_stat == True):
             print(hex_str)
 
-        if(resp[0] != 80):  #\x50 = 80 in decimal
+        error_stat = {
+            1 : "Message length error (>14bytes)",
+            2 : "Syntax error",
+            3 : "Command buffer full",
+            4 : "Command cancelled",
+            5 : "No socket",
+            65 : "Command not executable",
+        }
+
+        if(resp[0] != 80):  #\x50=80 decimal
+            if(resp[0] != 96):  #\x60=96d
+                print("Incorrect socket")
+            else:
+                print(error_stat[resp[1]])
             return 1
         return 0
+
+
+    def send(self, cmd):
+        """Sends a command to the camera and returns the success code"""
+        if self.ser == None:
+            return 1
+
+        #Is command an inquiry?
+        inq = False
+        if(cmd[0] == 9):
+            inq = True
+
+        msg = self.address
+        msg += cmd
+        msg += b'\xff'
+
+        #Write to camera
+        self.ser.write(msg)
+
+        status = self.receive(inq)
+        return status
 
 
     @staticmethod

@@ -7,28 +7,56 @@ class clear(object):
     def __repr__(self):
         os.system('cls' if os.name == 'nt' else 'clear')
         return ''
-
 clear = clear() #Printing 'clear' clears the screen
 
 #########MAIN############
 run = True
-gameMode = True #Control if camera is moved with WASD or through typed commands
+gameMode = True #Control if camera is moved with WASD or through direct commands
 
 print(clear)
 
 cam = Controller()
 
+imap = {
+    #Keyboard shortcuts
+    "w" : lambda x : cam.steer("up"),
+    "s" : lambda x : cam.steer("down"),
+    "a" : lambda x : cam.steer("left"),
+    "d" : lambda x : cam.steer("right"),
+    "c" : lambda x : cam.reset(),
+    "q" : lambda x : cam.zoomFocus("zoom", "in"),
+    "e" : lambda x : cam.zoomFocus("zoom", "out"),
+    "z" : lambda x : cam.zoomFocus("focus", "near"),
+    "x" : lambda x : cam.zoomFocus("zoom", "far"),
+    "f" : lambda x : cam.flip("toggle"),
+    "m" : lambda x : cam.mirror("toggle"),
+    "b" : lambda x : cam.backlight("toggle"),
+    #Direct commands
+    "vid_format" : lambda x : cam.vid_format(x),
+    "wb_auto" : lambda x : cam.wb_auto(x),
+    "ae_auto" : lambda x : cam.ae_auto(x),
+    "gamma_auto" : lambda x : cam.gamma_auto(x),
+    "mm_detect" : lambda x : cam.mm_detect(x),
+    "zf" : lambda x : cam.zoomFocus_direct(x),
+    "focus_auto" : lambda x : cam.focus_auto(x),
+    "pt" : lambda x : cam.pt_direct(x),
+    "ptzf" : lambda x : cam.ptzf(x),
+    #Queries
+    "q_camid" : lambda x : cam.Q_camID(),
+    "q_z" : lambda x : cam.Q_zoomPos(),
+    "q_fPos" : lambda x : cam.Q_focusPos(),
+    "q_fMode" : lambda x : cam.Q_focusMode(),
+    "q_pt" : lambda x : cam.Q_ptPos(),
+}
 
 port = input("Enter port to connect:")
 if(cam.connect(port)):
-    run = False #Exit since connect dailed
+    run = False #Exit since connect failed
     print("Connection to port: FAILED")
 
 while run:
     print(clear)
-    
-    print("Enter mode: Game(+) / Type(-)")
-    print("Press 0 to Quit")
+    print("Enter mode: Game(+) / Type(-)\nPress 0 to Quit")
 
     while True:
         if(keyboard.is_pressed("+")):
@@ -45,108 +73,22 @@ while run:
         print(clear)
 
         if(gameMode):
-            inp = keyboard.read_key()
-
-            #Escape to mode choice / quit
-            if(inp == "Esc" or inp == 'esc'):
-                break
-            elif(inp == "0"):
-                cam.disconnect()
-                exit()
-    
-            #Steer
-            elif(inp == "w"):         #Up
-                cam.steer("up")
-            elif(inp == "s"):       #Down
-                cam.steer("down")
-            elif(inp == "a"):       #Left
-                cam.steer("left")
-            elif(inp == "d"):       #Right
-                cam.steer("right")
-            elif(inp == "c"):       #Center
-                cam.reset()
-    
-            #Zoom
-            elif(inp == "q"):       #Zoom in
-                cam.zoomFocus("zoom", "in")
-            elif(inp == "e"):       #Zoom out
-                cam.zoomFocus("zoom", "out")
-    
-            #Focus
-            elif(inp == "z"):       #Focus near
-                cam.zoomFocus("focus", "near")
-            elif(inp == "x"):       #Focus far
-                cam.zoomFocus("zoom", "far")
-    
-            elif(inp == "f"):       #Flip
-                cam.flip("toggle")
-            elif(inp == "m"):       #Mirror
-                cam.mirror("toggle")
-            elif(inp == "b"):       #Backlight compensation
-                cam.mirror("toggle")
-    
-            sleep(0.1)  #To ensure keyboard presses are not excessive
-    
-    
+            inp = [0,0]
+            cmd = keyboard.read_key()
         else:
             inp = input(">>").split(' ')
             cmd = inp[0]
 
-            #Escape to mode choice / quit
-            if(cmd == "Esc"):
-                break
-            elif(cmd == "0"):
-                cam.disconnect()
-                exit()
+        #Process input
+        if cmd in imap:
+            imap[cmd](inp[1:])
 
-            elif(cmd == "vid_format"):
-                cam.vid_format(inp[1])
-
-            elif(cmd == "wb_auto"):
-                if(len(inp) == 2):
-                    cam.wb_auto(inp[1])
-                else:
-                    cam.wb_auto(inp[1], int(inp[2]))
-
-            elif(cmd == "ae_auto"):
-                if(len(inp) == 2):
-                    cam.ae_auto(inp[1])
-                else:
-                    cam.ae_auto(inp[1], int(inp[2]), int(inp[3]))
-
-            elif(cmd == "gamma_auto"):
-                if(len(inp) == 2):
-                    cam.gamma_auto(inp[1])
-                else:
-                    cam.gamma_auto(inp[1], int(inp[2]))
-
-            elif(cmd == "mm_detect"):
-                cam.mm_detect(inp[1])
-
-            elif(cmd == "zf"):
-                cam.zoomFocus_direct(int(inp[1]), int(inp[2]))
-
-            elif(cmd == "focus_auto"):
-                cam.focus_auto(inp[1])
-
-            elif(inp[0] == "pt"):
-                cam.pt_direct(int(inp[1]), int(inp[2]))
-
-            elif(cmd == "ptzf"):
-                cam.ptzf(int(inp[1]), int(inp[2]), int(inp[3]), int(inp[4]))
-
-
-            elif(cmd == "q_camid"):
-                cam.Q_camID()
-
-            elif(cmd == "q_z"):
-                cam.Q_zoomPos()
-
-            elif(cmd == "q_fPos"):
-                cam.Q_focusPos()
-
-            elif(cmd == "q_fMode"):
-                cam.Q_focusMode()
-
-            elif(cmd == "q_pt"):
-                cam.Q_ptPos()
+        #Escape to mode choice / quit
+        if(cmd == "Esc" or cmd == 'esc'):
+            break
+        elif(inp == "0"):
+            cam.disconnect()
+            exit()
+        
+        sleep(0.1)  #To ensure keyboard presses are not excessive
+print("Exiting...")

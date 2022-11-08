@@ -7,8 +7,8 @@ stat_OK = 0
 stat_FAIL = 1
 
 # Tandberg PrecisionHD 1080p supports:
-# Pan : -90 to +90 deg : 0-816 values
-# Tilt : -25 to +15 deg : 7-212 values
+# Pan : -90 to +90 deg : 0-816 values   # value = deg*4.533 + 408
+# Tilt : -25 to +15 deg : 7-212 values  # value = deg*5.125 + 135.125
 
 class Controller(object):
     flipState = False
@@ -24,7 +24,7 @@ class Controller(object):
         self.address = b'\x81'
 
         #Speeds
-        self.panSpeed = b'\x01' #Range 1-9?
+        self.panSpeed = b'\x01' #Range 0x01 - 0x0F
         self.tiltSpeed = b'\x01'
         self.panSpeedMax = b'\x01'
         self.tiltSpeedMax = b'\x01'
@@ -38,7 +38,7 @@ class Controller(object):
 
     def connect(self, *inp):
         #9600 baud, 8N1, no flow control.
-        interface = inp[0]
+        interface = inp[0][0]
         status = 0
         try:
             self.ser = serial.Serial(interface, timeout=5)
@@ -72,7 +72,7 @@ class Controller(object):
 
     def address_set(self, *inp):
         """Sets address of camera """
-        address = int(inp[0])
+        address = int(inp[0][0])
         #If broadcast i.e \x81, increase address with 1 before sending to chain
         #Assuming address 0-9. ?Is A-F allowed
         msg = b'\x30'
@@ -85,7 +85,7 @@ class Controller(object):
 
     def power(self, *inp):
         #The command doesnt power on/off the camera. Only reset motors
-        cmd = inp[0]
+        cmd = inp[0][0]
         lookup = {
             'on' : b'\x01\x04\x00\x02',
             'off': b'\x01\x04\x00\x03',
@@ -98,7 +98,7 @@ class Controller(object):
 
     def vid_format(self, *inp):
         """Sets the video format"""
-        cmd = inp[0]
+        cmd = inp[0][0]
         #Only functions if the video mode DIP is set to SW
         #If DIP is changed during runtime, camera must be rebooted
         lookup = {
@@ -124,7 +124,7 @@ class Controller(object):
 
     def wb_auto(self, *inp):
         """Sets White balance to auto/manual and to value if manual"""
-        cmd = inp[0]
+        cmd = inp[0][0]
         lookup = {
             'on' : b'\x01\x04\x35\x00',
             'off': b'\x01\x04\x35\x06',
@@ -132,7 +132,7 @@ class Controller(object):
 
         if(cmd == 'off'):
             #Update table index before switching to manual mode
-            msg = b'\x01\x04\x75' + self.__toVisca2b(int(inp[1]))
+            msg = b'\x01\x04\x75' + self.__toVisca2b(int(inp[0][1]))
             status = self.send(msg)
 
             if(status != stat_OK):
@@ -146,7 +146,7 @@ class Controller(object):
 
     def ae_auto(self, *inp):
         """Sets Auto Exposure to auto/manual and to value if manual"""
-        cmd = inp[0]
+        cmd = inp[0][0]
 
         lookup = {
             'on' : b'\x01\x04\x39\x00',
@@ -155,7 +155,7 @@ class Controller(object):
 
         if(cmd == 'off'):
             #Update iris position before switching to manual mode, range = 0..50
-            msg = b'\x01\x04\x4B' + self.__toVisca2b(int(inp[1]))
+            msg = b'\x01\x04\x4B' + self.__toVisca2b(int(inp[0][1]))
             status = self.send(msg)
 
             if(status != stat_OK):
@@ -176,7 +176,7 @@ class Controller(object):
 
     def backlight(self, *inp):
         """Turns backlight compensation on or off"""
-        cmd = inp[0]
+        cmd = inp[0][0]
         lookup = {
             'on' : b'\x01\x04\x33\x02',
             'off': b'\x01\x04\x33\x03',
@@ -198,7 +198,7 @@ class Controller(object):
 
     def mirror(self, *inp):
         """Turns mirror on or off"""
-        cmd = inp[0]
+        cmd = inp[0][0]
         lookup = {
             'on' : b'\x01\x04\x61\x02',
             'off': b'\x01\x04\x61\x03',
@@ -220,7 +220,7 @@ class Controller(object):
 
     def flip(self, *inp):
         """Turns flip on or off"""
-        cmd = inp[0]
+        cmd = inp[0][0]
         lookup = {
             'on' : b'\x01\x04\x66\x02',
             'off': b'\x01\x04\x66\x03',
@@ -242,7 +242,7 @@ class Controller(object):
 
     def gamma_auto(self, *inp):
         """Sets Gamma to auto/manual and to value if manual"""
-        cmd = inp[0]
+        cmd = inp[0][0]
         # Default - table 4
         lookup = {
             'on' : b'\x01\x04\x51\x02',
@@ -251,7 +251,7 @@ class Controller(object):
 
         if(cmd == 'off'):
             #Update table before switching to manual mode range = 0..7
-            msg = b'\x01\x04\x52' + self.__toVisca2b(int(inp[1]))
+            msg = b'\x01\x04\x52' + self.__toVisca2b(int(inp[0][1]))
             status = self.send(msg)
 
             if(status != stat_OK):
@@ -265,7 +265,7 @@ class Controller(object):
 
     def mm_detect(self, *inp):
         """Turns Motor moved detection on or off"""
-        cmd = inp[0]
+        cmd = inp[0][0]
         #Camera recalibrates if MMD is on and is touched
         lookup = {
             'on' : b'\x01\x50\x30\x01',
@@ -280,7 +280,7 @@ class Controller(object):
 
     def call_led(self, *inp):
         """Turns call LED on or off"""
-        cmd = inp[0]
+        cmd = inp[0][0]
         lookup = {
             'on' : b'\x01\x33\x01\x01',
             'off': b'\x01\x33\x01\x00',
@@ -294,7 +294,7 @@ class Controller(object):
         return status
 
     def pwr_led(self, *inp):
-        cmd = inp[0]
+        cmd = inp[0][0]
         """Turns power LED on or off"""
         lookup = {
             'on' : b'\x01\x33\x02\x01',
@@ -309,8 +309,8 @@ class Controller(object):
 
     def bestView(self, *inp):
         """Turns Best View on or off"""
-        cmd = inp[0]
-        time = int(inp[1])
+        cmd = inp[0][0]
+        time = int(inp[0][1])
         #time < 100s
         #time = 0 stops operation
         msg = b'\x01\x50\x60'
@@ -326,14 +326,14 @@ class Controller(object):
         return status
 
     def setZoomSpeed(self, *inp):
-        cmd = inp[0]
+        cmd = inp[0][0]
         if(cmd == "high"):
             self.zoomSpeed = 11
         else:
             self.zoomSpeed = 10
 
     def setFocusSpeed(self, *inp):
-        cmd = inp[0]
+        cmd = inp[0][0]
         if(cmd == "high"):
             self.focusSpeed = 11
         else:
@@ -341,8 +341,8 @@ class Controller(object):
 
     def zoomFocus(self, *inp):
         """Sets the Zoom/Focus"""
-        fn = inp[0]
-        cmd = inp[1]
+        fn = inp[0][0]
+        cmd = inp[0][1]
         msg = b'\x01\x04'
 
         speed = self.zoomSpeed
@@ -367,8 +367,8 @@ class Controller(object):
         return status
 
     def zoomFocus_direct(self, *inp):
-        zoom = int(inp[0])
-        focus = int(inp[1])
+        zoom = int(inp[0][0])
+        focus = int(inp[0][1])
         """Sets Zoom/Focus to specified position directly"""
         #Set zoom/focus arguments to -1 if functions are not used
         #Zoom/Focus = PQRS, not sure what these stand for
@@ -391,7 +391,7 @@ class Controller(object):
         return status
 
     def focus_auto(self, *inp):
-        cmd = inp[0]
+        cmd = inp[0][0]
         """Turns autofocus on or off"""
         lookup = {
             'on': b'\x01\x04\x38\x02',
@@ -406,7 +406,7 @@ class Controller(object):
 
     def steer(self, *inp):
         """Steer in a direction"""
-        cmd = inp[0]
+        cmd = inp[0][0]
         #Stop is not added
         lookup = {
             'up': b'\x03\x01',
@@ -450,8 +450,8 @@ class Controller(object):
 
     def pt_direct(self, *inp):
         """Sets Pan/Tilt directly to positions"""
-        pan = int(inp[0])
-        tilt = int(inp[1])
+        pan = int(inp[0][0])
+        tilt = int(inp[0][1])
         msg = b'\x01\x06\x02'
         msg += self.panSpeed
         msg += self.tiltSpeed
@@ -465,10 +465,10 @@ class Controller(object):
 
     def ptzf(self, *inp):
         """Sets all motors directly to positions in one operation"""
-        pan = int(inp[0])
-        tilt = int(inp[1])
-        zoom = int(inp[2])
-        focus = int(inp[3])
+        pan = int(inp[0][0])
+        tilt = int(inp[0][1])
+        zoom = int(inp[0][2])
+        focus = int(inp[0][3])
 
         msg = b'\x01\x06\x20'
         msg += self.__toVisca2b(pan)
@@ -484,7 +484,7 @@ class Controller(object):
 
     def serialSpeed(self, *inp):
         """Update serial communication speed"""
-        speed = inp[0]
+        speed = inp[0][0]
         #Requires a delay of 20s before next command
         #9600 baud/115200 baud
         lookup = {

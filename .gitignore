@@ -1,3 +1,6 @@
 *.pyc
 .vscode/
 *.txt
+*.toml
+*.whl
+*.tar.gz

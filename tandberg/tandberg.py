@@ -425,11 +425,15 @@ class Controller(object):
             'upleft'    : b'\x01\x01',
             'upright'   : b'\x02\x01',
             'downleft'  : b'\x01\x02',
-            'downright' : b'\x02\x02'
+            'downright' : b'\x02\x02',
+            'stop'      : b'\x03\x03',
         }
         msg = b'\x01\x06\x01'
-        msg += self.panSpeed
-        msg += self.tiltSpeed
+        if(cmd != 'stop'):
+            msg += self.panSpeed
+            msg += self.tiltSpeed
+        else:
+            msg += b'\x03\x03'
         msg += lookup[cmd]
 
         status = self.send(msg)
@@ -448,10 +452,9 @@ class Controller(object):
         return status
 
     def reboot(self):
-        # TODO: FIX
         """Reboots the camera"""
         #Resets serial to 9600 baud
-        msg = b'\x01\42'
+        msg = b'\x01\x42'
         status = self.send(msg)
 
         if(status != stat_OK):

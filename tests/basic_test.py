@@ -1,7 +1,7 @@
 import os
 import sys
 
-sys.path.append("../src/")
+sys.path.append("../tandberg/")
 from tandberg import tandberg as td
 import keyboard
 from time import sleep
@@ -36,6 +36,7 @@ imap = {
     "m" : lambda x : cam.mirror(["toggle"]),
     "b" : lambda x : cam.backlight(["toggle"]),
     #Direct commands
+    "stop"          : lambda x : cam.steer(["stop"]),
     "clear"         : lambda x : cam.clear(),
     "address_set"   : lambda x : cam.address_set(),
     "power"         : lambda x : cam.power(x),
